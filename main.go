@@ -19,6 +19,39 @@ import (
 
 const ctxTime = 2000
 
+// a list of all possible common executable names
+// for chromium-based browsers.
+var browsers = []string{
+	"chromium",
+	"chromium-browser",
+	"google-chrome",
+	"google-chrome-stable",
+	"microsoft-edge",
+	"microsoft-edge-stable",
+	"brave-browser",
+	"vivaldi",
+	"opera",
+	"msedge",
+	"ungoogled-chromium",
+}
+
+func detectBrowser() (string, error) {
+	var basePaths = []string{
+		"/bin/",
+		"/usr/bin/",
+	}
+	for _, basePath := range basePaths {
+		for _, name := range browsers {
+			path := basePath + name
+			if _, err := os.Stat(path); err == nil {
+				fmt.Println(path)
+				return path, nil
+			}
+		}
+	}
+	return "", fmt.Errorf("no Chromium-based browser found in PATH")
+}
+
 func main() {
 	usr, err := user.Current()
 	if err != nil {
@@ -51,35 +84,39 @@ func main() {
 	}
 
 	if info.Size() == 0 {
-		defaults := "browser=/usr/bin/google-chrome\n"
-		_, err = io.WriteString(configFile, defaults)
-		if err != nil {
-			fmt.Println("Error writing default config:", err)
-			return
-		}
 		configFile.Seek(0, 0)
 	}
 
+	// read browser from config
 	var defaultBrowser string
-
 	scanner := bufio.NewScanner(configFile)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-
 		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			continue
+		if len(parts) == 2 && strings.TrimSpace(parts[0]) == "browser" {
+			defaultBrowser = strings.TrimSpace(parts[1])
+		}
+	}
+
+	// Step 2: if config is empty or invalid, detect in PATH
+	if defaultBrowser == "" {
+		detectedBrowser, err := detectBrowser()
+		if err != nil {
+			fmt.Println("No Chromium-based browser found in PATH or config.")
+			fmt.Println("Please install a Chromium-based browser or edit the config at", configPath)
+			return
 		}
 
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
+		defaultBrowser = detectedBrowser
+		defaultbrowserConfig := "browser=" + defaultBrowser
 
-		if key == "browser" {
-			defaultBrowser = value
+		_, err = io.WriteString(configFile, defaultbrowserConfig)
+		if err != nil {
+			fmt.Println("Error writing default config:", err)
+			return
 		}
 	}
 
