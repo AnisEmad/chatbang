@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"os/user"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -20,19 +19,34 @@ import (
 
 const ctxTime = 2000
 
+// a list of all possible common executable names
+// for chromium-based browsers.
 var browsers = []string{
-	"google-chrome",
-	"chrome",
 	"chromium",
 	"chromium-browser",
+	"google-chrome",
+	"google-chrome-stable",
+	"microsoft-edge",
+	"microsoft-edge-stable",
 	"brave-browser",
-	"edge",
+	"vivaldi",
+	"opera",
+	"msedge",
+	"ungoogled-chromium",
 }
 
 func detectBrowser() (string, error) {
-	for _, name := range browsers {
-		if path, err := exec.LookPath(name); err == nil {
-			return path, nil
+	var basePaths = []string{
+		"/bin/",
+		"/usr/bin/",
+	}
+	for _, basePath := range basePaths {
+		for _, name := range browsers {
+			path := basePath + name
+			if _, err := os.Stat(path); err == nil {
+				fmt.Println(path)
+				return path, nil
+			}
 		}
 	}
 	return "", fmt.Errorf("no Chromium-based browser found in PATH")
@@ -70,7 +84,6 @@ func main() {
 	}
 
 	if info.Size() == 0 {
-		io.WriteString(configFile, "browser=\n")
 		configFile.Seek(0, 0)
 	}
 
@@ -89,14 +102,22 @@ func main() {
 	}
 
 	// Step 2: if config is empty or invalid, detect in PATH
-	if defaultBrowser == "" || exec.Command(defaultBrowser).Run() != nil {
+	if defaultBrowser == "" {
 		detectedBrowser, err := detectBrowser()
 		if err != nil {
 			fmt.Println("No Chromium-based browser found in PATH or config.")
 			fmt.Println("Please install a Chromium-based browser or edit the config at", configPath)
 			return
 		}
+
 		defaultBrowser = detectedBrowser
+		defaultbrowserConfig := "browser=" + defaultBrowser
+
+		_, err = io.WriteString(configFile, defaultbrowserConfig)
+		if err != nil {
+			fmt.Println("Error writing default config:", err)
+			return
+		}
 	}
 
 	if len(os.Args) > 1 {
