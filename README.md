@@ -1,5 +1,8 @@
 # Chatbang
 
+[![CI/CD](https://github.com/AnisEmad/chatbang/actions/workflows/main.yml/badge.svg)](https://github.com/AnisEmad/chatbang/actions/workflows/main.yml)
+[![Release](https://github.com/AnisEmad/chatbang/actions/workflows/release.yml/badge.svg)](https://github.com/AnisEmad/chatbang/actions/workflows/release.yml)
+
 `Chatbang` is a simple tool to access ChatGPT from the terminal, without needing for an API key.
 
 ![Chatbang](./assets/chatbang.png)
@@ -57,3 +60,9 @@ chatbang
 ## How it works?
 
 Read that article: [https://ahmedhosssam.github.io/posts/chatbang/](https://ahmedhosssam.github.io/posts/chatbang/)
+
+---
+
+## Workflows
+
+For detailed information about CI/CD workflows and releases, see [WORKFLOW.md](.github/workflows/WORKFLOW.md).
