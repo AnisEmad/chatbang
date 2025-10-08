@@ -1,0 +1,38 @@
+name: Release
+on: 
+  push:
+    branches: main
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5.0.0
+
+      - name: Setup go
+        uses: actions/setup-go@v6.0.0
+
+      - name: install dependencies
+        run: go mod tidy
+
+      - name: Run tests
+        run: go test -v
+
+      - name: Build binary 
+        run: |
+          mkdir -p dist
+          go build -o dist/chatbang main.go
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/chatbang
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
